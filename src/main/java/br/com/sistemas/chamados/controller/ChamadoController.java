@@ -3,15 +3,20 @@ package br.com.sistemas.chamados.controller;
 import br.com.sistemas.chamados.dto.AtribuicaoRequest;
 import br.com.sistemas.chamados.dto.ChamadoRequest;
 import br.com.sistemas.chamados.dto.ChamadoResponse;
+import br.com.sistemas.chamados.dto.RespostaPaginada;
 import br.com.sistemas.chamados.dto.StatusRequest;
+import br.com.sistemas.chamados.entity.PrioridadeChamado;
+import br.com.sistemas.chamados.entity.StatusChamado;
 import br.com.sistemas.chamados.service.ChamadoService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/chamados")
@@ -32,8 +37,12 @@ public class ChamadoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ChamadoResponse>> listar() {
-        return ResponseEntity.ok(chamadoService.listarTodos());
+    public ResponseEntity<RespostaPaginada<ChamadoResponse>> listar(
+            @RequestParam(required = false) StatusChamado status,
+            @RequestParam(required = false) PrioridadeChamado prioridade,
+            @RequestParam(required = false) Long clienteId,
+            @PageableDefault(sort = "dataAbertura", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(chamadoService.pesquisar(status, prioridade, clienteId, pageable));
     }
 
     @GetMapping("/{id}")

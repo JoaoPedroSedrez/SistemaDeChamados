@@ -1,9 +1,15 @@
 package br.com.sistemas.chamados.controller;
 
+import br.com.sistemas.chamados.dto.ChamadoResponse;
 import br.com.sistemas.chamados.dto.ClienteRequest;
 import br.com.sistemas.chamados.dto.ClienteResponse;
+import br.com.sistemas.chamados.dto.RespostaPaginada;
+import br.com.sistemas.chamados.service.ChamadoService;
 import br.com.sistemas.chamados.service.ClienteService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -16,9 +22,11 @@ import java.util.List;
 public class ClienteController {
 
     private final ClienteService clienteService;
+    private final ChamadoService chamadoService;
 
-    public ClienteController(ClienteService clienteService) {
+    public ClienteController(ClienteService clienteService, ChamadoService chamadoService) {
         this.clienteService = clienteService;
+        this.chamadoService = chamadoService;
     }
 
     @PostMapping
@@ -37,6 +45,13 @@ public class ClienteController {
     @GetMapping("/{id}")
     public ResponseEntity<ClienteResponse> detalhar(@PathVariable Long id) {
         return ResponseEntity.ok(clienteService.buscarPorId(id));
+    }
+
+    @GetMapping("/{id}/chamados")
+    public ResponseEntity<RespostaPaginada<ChamadoResponse>> chamadosDoCliente(
+            @PathVariable Long id,
+            @PageableDefault(sort = "dataAbertura", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(chamadoService.listarDoCliente(id, pageable));
     }
 
     @PutMapping("/{id}")

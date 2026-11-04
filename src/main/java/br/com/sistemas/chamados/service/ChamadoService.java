@@ -3,24 +3,34 @@ package br.com.sistemas.chamados.service;
 import br.com.sistemas.chamados.dto.AtribuicaoRequest;
 import br.com.sistemas.chamados.dto.ChamadoRequest;
 import br.com.sistemas.chamados.dto.ChamadoResponse;
+import br.com.sistemas.chamados.dto.RespostaPaginada;
 import br.com.sistemas.chamados.dto.StatusRequest;
 import br.com.sistemas.chamados.entity.Categoria;
 import br.com.sistemas.chamados.entity.Chamado;
 import br.com.sistemas.chamados.entity.Cliente;
+import br.com.sistemas.chamados.entity.PrioridadeChamado;
+import br.com.sistemas.chamados.entity.StatusChamado;
 import br.com.sistemas.chamados.entity.Tecnico;
+import br.com.sistemas.chamados.exception.FiltroInvalidoException;
 import br.com.sistemas.chamados.exception.RecursoNaoEncontradoException;
 import br.com.sistemas.chamados.exception.RegraNegocioException;
 import br.com.sistemas.chamados.repository.CategoriaRepository;
 import br.com.sistemas.chamados.repository.ChamadoRepository;
 import br.com.sistemas.chamados.repository.ClienteRepository;
 import br.com.sistemas.chamados.repository.TecnicoRepository;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Set;
 
 @Service
 public class ChamadoService {
+
+    private static final Set<String> ORDENACOES_PERMITIDAS = Set.of(
+            "id", "titulo", "dataAbertura", "dataFechamento", "prioridade", "status",
+            "cliente.nome", "categoria.nome");
 
     private final ChamadoRepository chamadoRepository;
     private final ClienteRepository clienteRepository;
@@ -50,10 +60,17 @@ public class ChamadoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChamadoResponse> listarTodos() {
-        return chamadoRepository.findAll().stream()
-                .map(ChamadoResponse::from)
-                .toList();
+    public RespostaPaginada<ChamadoResponse> pesquisar(StatusChamado status, PrioridadeChamado prioridade,
+                                                       Long clienteId, Pageable pageable) {
+        verificarOrdenacao(pageable.getSort());
+        return RespostaPaginada.from(
+                chamadoRepository.pesquisar(status, prioridade, clienteId, pageable).map(ChamadoResponse::from));
+    }
+
+    @Transactional(readOnly = true)
+    public RespostaPaginada<ChamadoResponse> listarDoCliente(Long clienteId, Pageable pageable) {
+        obterCliente(clienteId);
+        return pesquisar(null, null, clienteId, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -90,6 +107,15 @@ public class ChamadoService {
     public void remover(Long id) {
         Chamado chamado = obterChamado(id);
         chamadoRepository.delete(chamado);
+    }
+
+    private void verificarOrdenacao(Sort sort) {
+        for (Sort.Order ordem : sort) {
+            if (!ORDENACOES_PERMITIDAS.contains(ordem.getProperty())) {
+                throw new FiltroInvalidoException("Ordenação por '" + ordem.getProperty()
+                        + "' não é permitida. Use um destes campos: " + ORDENACOES_PERMITIDAS);
+            }
+        }
     }
 
     private Chamado obterChamado(Long id) {
