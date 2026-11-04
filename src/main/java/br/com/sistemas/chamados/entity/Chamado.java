@@ -58,6 +58,17 @@ public class Chamado {
         this.dataAbertura = LocalDateTime.now();
     }
 
+    public boolean estaFechado() {
+        return status == StatusChamado.FECHADO;
+    }
+
+    public void alterarStatus(StatusChamado novoStatus) {
+        this.status = novoStatus;
+        if (novoStatus == StatusChamado.FECHADO) {
+            this.dataFechamento = LocalDateTime.now();
+        }
+    }
+
     public Long getId() { return id; }
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }

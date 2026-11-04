@@ -1,12 +1,15 @@
 package br.com.sistemas.chamados.service;
 
+import br.com.sistemas.chamados.dto.AtribuicaoRequest;
 import br.com.sistemas.chamados.dto.ChamadoRequest;
 import br.com.sistemas.chamados.dto.ChamadoResponse;
+import br.com.sistemas.chamados.dto.StatusRequest;
 import br.com.sistemas.chamados.entity.Categoria;
 import br.com.sistemas.chamados.entity.Chamado;
 import br.com.sistemas.chamados.entity.Cliente;
 import br.com.sistemas.chamados.entity.Tecnico;
 import br.com.sistemas.chamados.exception.RecursoNaoEncontradoException;
+import br.com.sistemas.chamados.exception.RegraNegocioException;
 import br.com.sistemas.chamados.repository.CategoriaRepository;
 import br.com.sistemas.chamados.repository.ChamadoRepository;
 import br.com.sistemas.chamados.repository.ClienteRepository;
@@ -60,13 +63,26 @@ public class ChamadoService {
 
     @Transactional
     public ChamadoResponse atualizar(Long id, ChamadoRequest request) {
-        Chamado chamado = obterChamado(id);
+        Chamado chamado = obterChamadoEmAberto(id);
         chamado.setTitulo(request.titulo());
         chamado.setDescricao(request.descricao());
         chamado.setPrioridade(request.prioridade());
         chamado.setCliente(obterCliente(request.clienteId()));
         chamado.setCategoria(obterCategoria(request.categoriaId()));
+        return ChamadoResponse.from(chamado);
+    }
+
+    @Transactional
+    public ChamadoResponse atribuirTecnico(Long id, AtribuicaoRequest request) {
+        Chamado chamado = obterChamadoEmAberto(id);
         chamado.setTecnico(obterTecnicoOpcional(request.tecnicoId()));
+        return ChamadoResponse.from(chamado);
+    }
+
+    @Transactional
+    public ChamadoResponse mudarStatus(Long id, StatusRequest request) {
+        Chamado chamado = obterChamadoEmAberto(id);
+        chamado.alterarStatus(request.status());
         return ChamadoResponse.from(chamado);
     }
 
@@ -79,6 +95,14 @@ public class ChamadoService {
     private Chamado obterChamado(Long id) {
         return chamadoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Chamado com id " + id + " não encontrado"));
+    }
+
+    private Chamado obterChamadoEmAberto(Long id) {
+        Chamado chamado = obterChamado(id);
+        if (chamado.estaFechado()) {
+            throw new RegraNegocioException("Chamado " + id + " já foi fechado e não pode mais ser alterado");
+        }
+        return chamado;
     }
 
     private Cliente obterCliente(Long id) {
