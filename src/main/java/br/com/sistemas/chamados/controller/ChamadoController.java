@@ -1,7 +1,9 @@
 package br.com.sistemas.chamados.controller;
 
+import br.com.sistemas.chamados.dto.AtribuicaoRequest;
 import br.com.sistemas.chamados.dto.ChamadoRequest;
 import br.com.sistemas.chamados.dto.ChamadoResponse;
+import br.com.sistemas.chamados.dto.StatusRequest;
 import br.com.sistemas.chamados.service.ChamadoService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +45,18 @@ public class ChamadoController {
     public ResponseEntity<ChamadoResponse> atualizar(@PathVariable Long id,
                                                      @Valid @RequestBody ChamadoRequest request) {
         return ResponseEntity.ok(chamadoService.atualizar(id, request));
+    }
+
+    @PatchMapping("/{id}/atribuir")
+    public ResponseEntity<ChamadoResponse> atribuirTecnico(@PathVariable Long id,
+                                                           @Valid @RequestBody AtribuicaoRequest request) {
+        return ResponseEntity.ok(chamadoService.atribuirTecnico(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ChamadoResponse> mudarStatus(@PathVariable Long id,
+                                                       @Valid @RequestBody StatusRequest request) {
+        return ResponseEntity.ok(chamadoService.mudarStatus(id, request));
     }
 
     @DeleteMapping("/{id}")
