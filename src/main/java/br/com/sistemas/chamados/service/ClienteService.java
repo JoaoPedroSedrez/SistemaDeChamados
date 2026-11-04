@@ -4,65 +4,63 @@ import br.com.sistemas.chamados.dto.ClienteRequest;
 import br.com.sistemas.chamados.dto.ClienteResponse;
 import br.com.sistemas.chamados.entity.Cliente;
 import br.com.sistemas.chamados.exception.RecursoNaoEncontradoException;
-import br.com.sistemas.chamados.exception.RegraNegocioExepction;
+import br.com.sistemas.chamados.exception.RegraNegocioException;
 import br.com.sistemas.chamados.repository.ClienteRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class ClienteService {
 
-    private final ClienteRepository repository;
+    private final ClienteRepository clienteRepository;
 
-    public ClienteService(ClienteRepository repository) {
-        this.repository = repository;
+    public ClienteService(ClienteRepository clienteRepository) {
+        this.clienteRepository = clienteRepository;
     }
 
     @Transactional
-    public ClienteResponse criar(ClienteRequest dto) {
-
-        if (repository.existsByEmail(dto.email())) {
-            throw new RegraNegocioExepction("Já existe cliente com o e-mail" + dto.email());
+    public ClienteResponse salvar(ClienteRequest request) {
+        if (clienteRepository.existsByEmail(request.email())) {
+            throw new RegraNegocioException("E-mail " + request.email() + " já está cadastrado");
         }
-
-        Cliente salvo = repository.save(new Cliente(dto.nome(), dto.email(), dto.telefone()));
-        return ClienteResponse.de(salvo);
+        Cliente novo = new Cliente(request.nome(), request.email(), request.telefone());
+        return ClienteResponse.from(clienteRepository.save(novo));
     }
 
     @Transactional(readOnly = true)
-    public List<ClienteResponse> listar() {
-        return repository.findAll().stream().map(ClienteResponse::de).toList();
+    public List<ClienteResponse> listarTodos() {
+        return clienteRepository.findAll().stream()
+                .map(ClienteResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public ClienteResponse buscar(Long id) {
-        return ClienteResponse.de(buscarEntity(id));
+    public ClienteResponse buscarPorId(Long id) {
+        return ClienteResponse.from(obterCliente(id));
     }
 
     @Transactional
-    public ClienteResponse atualizar(Long id, ClienteRequest dto) {
-
-        Cliente cliente = buscarEntity(id);
-
-        if (repository.existsByEmailAndIdNot(dto.email(), id)) {
-            throw new RegraNegocioExepction("Já existe cliente com o e-mail" + dto.email());
+    public ClienteResponse atualizar(Long id, ClienteRequest request) {
+        Cliente cliente = obterCliente(id);
+        if (clienteRepository.existsByEmailAndIdNot(request.email(), id)) {
+            throw new RegraNegocioException("E-mail " + request.email() + " já está cadastrado");
         }
-        cliente.setNome(dto.nome());
-        cliente.setEmail(dto.email());
-        cliente.setTelefone(dto.telefone());
-        return ClienteResponse.de(cliente);
+        cliente.setNome(request.nome());
+        cliente.setEmail(request.email());
+        cliente.setTelefone(request.telefone());
+        return ClienteResponse.from(cliente);
     }
 
     @Transactional
-    public void excluir(Long id) {
-        repository.delete(buscarEntity(id));
+    public void remover(Long id) {
+        Cliente cliente = obterCliente(id);
+        clienteRepository.delete(cliente);
     }
 
-    private Cliente buscarEntity(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException((
-                        "Cliente " + id + " não encontrado"));
+    private Cliente obterCliente(Long id) {
+        return clienteRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente com id " + id + " não encontrado"));
     }
 }

@@ -7,36 +7,32 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
-    public ResponseEntity<ErroResposta> naoEncontrado(RecursoNaoEncontradoException ex) {
-        return montar(HttpStatus.NOT_FOUND, ex.getMessage(), List.of());
+    public ResponseEntity<ErroResposta> tratarNaoEncontrado(RecursoNaoEncontradoException ex) {
+        return responder(HttpStatus.NOT_FOUND, ex.getMessage(), new ArrayList<>());
     }
 
-    @ExceptionHandler(RegraNegocioExepction.class)
-    public ResponseEntity<ErroResposta> regraNegocio(RecursoNaoEncontradoException ex) {
-        return montar(HttpStatus.CONFLICT, ex.getMessage(), List.of());
+    @ExceptionHandler(RegraNegocioException.class)
+    public ResponseEntity<ErroResposta> tratarRegraNegocio(RegraNegocioException ex) {
+        return responder(HttpStatus.CONFLICT, ex.getMessage(), new ArrayList<>());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErroResposta> validacao(MethodArgumentNotValidException ex) {
-
-        List<String> detalhes = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> e.getField() + ":" + e.getDefaultMessage())
-                .toList();
-        return montar(HttpStatus.BAD_REQUEST, "Dados inválidos", detalhes);
+    public ResponseEntity<ErroResposta> tratarValidacao(MethodArgumentNotValidException ex) {
+        List<String> erros = new ArrayList<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(campo -> erros.add(campo.getField() + ": " + campo.getDefaultMessage()));
+        return responder(HttpStatus.BAD_REQUEST, "Dados inválidos", erros);
     }
 
-    private ResponseEntity<ErroResposta> montar(
-            HttpStatus status, String erro, List<String> detalhes) {
-            return ResponseEntity.status(status)
-                    .body(new ErroResposta(LocalDateTime.now(), status.value(), erro, detalhes));
+    private ResponseEntity<ErroResposta> responder(HttpStatus status, String mensagem, List<String> detalhes) {
+        ErroResposta corpo = new ErroResposta(LocalDateTime.now(), status.value(), mensagem, detalhes);
+        return ResponseEntity.status(status).body(corpo);
     }
-    )
-
-
 }
