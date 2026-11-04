@@ -5,6 +5,7 @@ import br.com.sistemas.chamados.dto.TecnicoResponse;
 import br.com.sistemas.chamados.entity.Tecnico;
 import br.com.sistemas.chamados.exception.RecursoNaoEncontradoException;
 import br.com.sistemas.chamados.exception.RegraNegocioException;
+import br.com.sistemas.chamados.repository.ChamadoRepository;
 import br.com.sistemas.chamados.repository.TecnicoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,11 @@ import java.util.List;
 public class TecnicoService {
 
     private final TecnicoRepository tecnicoRepository;
+    private final ChamadoRepository chamadoRepository;
 
-    public TecnicoService(TecnicoRepository tecnicoRepository) {
+    public TecnicoService(TecnicoRepository tecnicoRepository, ChamadoRepository chamadoRepository) {
         this.tecnicoRepository = tecnicoRepository;
+        this.chamadoRepository = chamadoRepository;
     }
 
     @Transactional
@@ -56,6 +59,9 @@ public class TecnicoService {
     @Transactional
     public void remover(Long id) {
         Tecnico tecnico = obterTecnico(id);
+        if (chamadoRepository.existsByTecnicoId(id)) {
+            throw new RegraNegocioException("Técnico possui chamados vinculados e não pode ser removido");
+        }
         tecnicoRepository.delete(tecnico);
     }
 
