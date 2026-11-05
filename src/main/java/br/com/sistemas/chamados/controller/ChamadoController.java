@@ -1,6 +1,7 @@
 package br.com.sistemas.chamados.controller;
 
 import br.com.sistemas.chamados.dto.AtribuicaoRequest;
+import br.com.sistemas.chamados.dto.ChamadoDetalhadoResponse;
 import br.com.sistemas.chamados.dto.ChamadoRequest;
 import br.com.sistemas.chamados.dto.ChamadoResponse;
 import br.com.sistemas.chamados.dto.RespostaPaginada;
@@ -46,7 +47,7 @@ public class ChamadoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ChamadoResponse> detalhar(@PathVariable Long id) {
+    public ResponseEntity<ChamadoDetalhadoResponse> detalhar(@PathVariable Long id) {
         return ResponseEntity.ok(chamadoService.buscarPorId(id));
     }
 

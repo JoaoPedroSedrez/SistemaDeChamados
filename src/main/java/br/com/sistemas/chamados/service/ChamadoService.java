@@ -1,6 +1,7 @@
 package br.com.sistemas.chamados.service;
 
 import br.com.sistemas.chamados.dto.AtribuicaoRequest;
+import br.com.sistemas.chamados.dto.ChamadoDetalhadoResponse;
 import br.com.sistemas.chamados.dto.ChamadoRequest;
 import br.com.sistemas.chamados.dto.ChamadoResponse;
 import br.com.sistemas.chamados.dto.RespostaPaginada;
@@ -17,6 +18,7 @@ import br.com.sistemas.chamados.exception.RegraNegocioException;
 import br.com.sistemas.chamados.repository.CategoriaRepository;
 import br.com.sistemas.chamados.repository.ChamadoRepository;
 import br.com.sistemas.chamados.repository.ClienteRepository;
+import br.com.sistemas.chamados.repository.ComentarioRepository;
 import br.com.sistemas.chamados.repository.TecnicoRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -36,15 +38,18 @@ public class ChamadoService {
     private final ClienteRepository clienteRepository;
     private final CategoriaRepository categoriaRepository;
     private final TecnicoRepository tecnicoRepository;
+    private final ComentarioRepository comentarioRepository;
 
     public ChamadoService(ChamadoRepository chamadoRepository,
                           ClienteRepository clienteRepository,
                           CategoriaRepository categoriaRepository,
-                          TecnicoRepository tecnicoRepository) {
+                          TecnicoRepository tecnicoRepository,
+                          ComentarioRepository comentarioRepository) {
         this.chamadoRepository = chamadoRepository;
         this.clienteRepository = clienteRepository;
         this.categoriaRepository = categoriaRepository;
         this.tecnicoRepository = tecnicoRepository;
+        this.comentarioRepository = comentarioRepository;
     }
 
     @Transactional
@@ -74,8 +79,10 @@ public class ChamadoService {
     }
 
     @Transactional(readOnly = true)
-    public ChamadoResponse buscarPorId(Long id) {
-        return ChamadoResponse.from(obterChamado(id));
+    public ChamadoDetalhadoResponse buscarPorId(Long id) {
+        Chamado chamado = obterChamado(id);
+        return ChamadoDetalhadoResponse.from(chamado,
+                comentarioRepository.findByChamadoIdOrderByDataCriacaoAscIdAsc(id));
     }
 
     @Transactional
@@ -106,6 +113,7 @@ public class ChamadoService {
     @Transactional
     public void remover(Long id) {
         Chamado chamado = obterChamado(id);
+        comentarioRepository.deleteByChamadoId(id);
         chamadoRepository.delete(chamado);
     }
 
