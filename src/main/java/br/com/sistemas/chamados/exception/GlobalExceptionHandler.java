@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +22,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RegraNegocioException.class)
     public ResponseEntity<ErroResposta> tratarRegraNegocio(RegraNegocioException ex) {
         return responder(HttpStatus.CONFLICT, ex.getMessage(), new ArrayList<>());
+    }
+
+    @ExceptionHandler(FiltroInvalidoException.class)
+    public ResponseEntity<ErroResposta> tratarFiltroInvalido(FiltroInvalidoException ex) {
+        return responder(HttpStatus.BAD_REQUEST, ex.getMessage(), new ArrayList<>());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErroResposta> tratarParametroInvalido(MethodArgumentTypeMismatchException ex) {
+        String mensagem = "Valor '" + ex.getValue() + "' inválido para o parâmetro " + ex.getName();
+        return responder(HttpStatus.BAD_REQUEST, mensagem, new ArrayList<>());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
